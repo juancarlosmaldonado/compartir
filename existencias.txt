@@ -1,0 +1,28 @@
+ALTER PROCEDURE [dbo].[sp_BuscarExistenciaProducto]
+@pmFiltro nvarchar(50)
+AS
+
+BEGIN
+SELECT    DISTINCT     dbo.tblProducto.Id_Producto, dbo.tblProducto.Nombre, dbo.tblLaboratorio.Nombre AS Laboratorio, 
+                         dbo.tblPresentacion.Descripcion AS Presentacion, cast (floor(CAST(CAST(dbo.tblLote_Producto.Cantidad_Unidades AS DECIMAL(18, 5)) 
+                         / CAST(dbo.tblPresentacion.Cantidad AS DECIMAL(18, 5)) AS DECIMAL(18, 5))) as nvarchar)+' con ' + 
+
+CAST(floor(ROUND(((CAST((cast(dbo.tblLote_Producto.Cantidad_Unidades as decimal (18,5))/cast(dbo.tblPresentacion.Cantidad as decimal (18,5))) as decimal (18,5))
+- floor(CAST((cast(dbo.tblLote_Producto.Cantidad_Unidades as decimal (18,5))/cast(dbo.tblPresentacion.Cantidad as decimal (18,5))) as decimal (18,5))))*cast(dbo.tblPresentacion.Cantidad as decimal(18,5))),0)) AS nvarchar)
+		
+							 
+						 
+						 +' Unidades' AS Existencia, dbo.tblLote.Id_Lote, dbo.tblLote.Cod_Lote, 
+                         dbo.tblLote.Fecha_Vencimiento, dbo.tblLote_Producto.Precio_Costo, dbo.tblLote_Producto.Precio_Venta, dbo.tblPresentacion.Cantidad AS UnidadesPorPresentacion, 
+                         dbo.tblPresentacion.Id_Presentacion, dbo.tblLote_Producto.Cantidad_Unidades
+FROM            dbo.tblProducto INNER JOIN
+                         dbo.tblLaboratorio ON dbo.tblProducto.Id_Laboratorio = dbo.tblLaboratorio.Id_Laboratorio INNER JOIN
+                         dbo.tblProductoPresentacion ON dbo.tblProducto.Id_Producto = dbo.tblProductoPresentacion.Id_Producto INNER JOIN
+                         dbo.tblPresentacion ON dbo.tblProductoPresentacion.Id_Presentacion = dbo.tblPresentacion.Id_Presentacion INNER JOIN
+                         dbo.tblClasePresentacion ON dbo.tblProductoPresentacion.Id_ClasePresentacion = dbo.tblClasePresentacion.Id_ClasePresentacion INNER JOIN
+                         dbo.tblLote_Producto ON dbo.tblProducto.Id_Producto = dbo.tblLote_Producto.Id_Producto INNER JOIN
+                         dbo.tblLote ON dbo.tblProductoPresentacion.Id_Lote = dbo.tblLote.Id_Lote AND dbo.tblLote_Producto.Id_Lote = dbo.tblLote.Id_Lote INNER JOIN
+                         dbo.tblEstado ON dbo.tblProducto.Id_Estado = dbo.tblEstado.Id_Estado AND dbo.tblLote_Producto.Id_Estado = dbo.tblEstado.Id_Estado
+WHERE        (dbo.tblProducto.Nombre LIKE '%' + @pmFiltro + '%') AND (dbo.tblClasePresentacion.Descripcion = 'PRINCIPAL') AND (dbo.tblEstado.Descripcion = 'ACTIVO')
+ORDER BY dbo.tblProducto.Nombre, dbo.tblLote.Fecha_Vencimiento
+END
